@@ -41,6 +41,13 @@ def create_app(test_config=None):
 
     return questions_paginated
 
+  def get_category_list():
+    categories = Category.query.all()
+    category_list = {category.id: category.type for category in categories}
+    if len(category_list) == 0:
+      abort(404)
+    return category_list
+  
   '''
   @TODO: 
   Create an endpoint to handle GET requests 
@@ -53,13 +60,6 @@ def create_app(test_config=None):
       'success': True,
       'categories': get_category_list()
     })
-
-  def get_category_list():
-    categories = Category.query.all()
-    category_list = {category.id: category.type for category in categories}
-    if len(category_list) == 0:
-      abort(404)
-    return category_list
   
   '''
   @TODO: 
