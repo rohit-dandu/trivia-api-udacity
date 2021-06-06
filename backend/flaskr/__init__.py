@@ -9,6 +9,7 @@ from models import setup_db, Question, Category
 QUESTIONS_PER_PAGE = 10
 
 def create_app(test_config=None):
+  
   # create and configure the app
   app = Flask(__name__)
   setup_db(app)
@@ -16,32 +17,50 @@ def create_app(test_config=None):
   '''
   @TODO: Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
   '''
+  # set up cors
   CORS(app)
   '''
   @TODO: Use the after_request decorator to set Access-Control-Allow
   '''
+
+  # access control allowed headers and methods
   @app.after_request
   def after_request(response):
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTION')
     return response
   
+  def paginate_questions(request, questions_list):
+    # get the page argument from request.args
+    page = request.args.get('page', 1, type=int)
+    start = (page - 1) * QUESTIONS_PER_PAGE
+    end = start + QUESTIONS_PER_PAGE
+
+    questions = [question.format() for question in questions_list]
+    questions_paginated = questions[start:end]
+
+    return questions_paginated
+
   '''
   @TODO: 
   Create an endpoint to handle GET requests 
   for all available categories.
   '''
-
+  # return categories available
   @app.route('/categories', methods=['GET'])
   def get_categories():
+    return jsonify({
+      'success': True,
+      'categories': get_category_list()
+    })
+
+  def get_category_list():
     categories = Category.query.all()
     category_list = {category.id: category.type for category in categories}
     if len(category_list) == 0:
       abort(404)
-    return jsonify({
-      'success': True,
-      'categories': category_list
-    })
+    return category_list
+  
   '''
   @TODO: 
   Create an endpoint to handle GET requests for questions, 
@@ -54,7 +73,23 @@ def create_app(test_config=None):
   ten questions per page and pagination at the bottom of the screen for three pages.
   Clicking on the page numbers should update the questions. 
   '''
+  @app.route('/questions', methods=['GET'])
+  def get_questions():
+    # get all the questions
+    questions_list = Question.query.all()
+    # paginate questions; 10 per page
+    questions_paginated = paginate_questions(request, questions_list)
 
+    if len(questions_paginated) == 0:
+      abort(404)
+
+    return jsonify({
+      'success': True,
+      'questions': questions_paginated,
+      'total_questions': len(questions_list),
+      'categories': get_category_list(),
+      'currentCategory': None
+    })
   '''
   @TODO: 
   Create an endpoint to DELETE question using a question ID. 
